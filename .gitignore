@@ -1,0 +1,7 @@
+# 密钥文件（本地用，决不上传）
+*.env
+*secret*
+*key*
+
+# macOS
+.DS_Store
