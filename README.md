@@ -6,8 +6,8 @@
 ## 快速开始
 
 ```bash
-cd ~/.mcp-servers  # 或重新 clone 本项目后执行 deploy.sh
-./deploy.sh
+cd codex-mcp-migration
+./setup.sh
 ```
 
 部署后文件结构:
@@ -35,23 +35,23 @@ server.py 通过 stdlib `_load_env()` 读取，无需 pip 安装任何依赖。
 
 ## 注册到 Agent
 
-### Reasonix / Codex
+### Reasonix
 
-使用 `install_source` 工具或手动在 config.toml 追加:
+追加到 `~/.reasonix/config.toml`（全局）或项目 `reasonix.toml` 的 `[[plugins]]` 段：
 
 ```toml
-[mcp_servers.vision-mcp]
+[[plugins]]
+name    = "qwen-vision"
 command = "python3"
-args = ["/Users/montana/.mcp-servers/vision/server.py"]
-startup_timeout_sec = 30
+args    = ["/Users/montana/.mcp-servers/vision/server.py"]
 
-[mcp_servers.search-mcp]
+[[plugins]]
+name    = "tavily-search"
 command = "python3"
-args = ["/Users/montana/.mcp-servers/search/server.py"]
-startup_timeout_sec = 30
+args    = ["/Users/montana/.mcp-servers/search/server.py"]
 ```
 
-### Claude Code
+### Claude Code / 其他 agent
 
 ```json
 {

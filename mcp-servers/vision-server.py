@@ -35,10 +35,16 @@ VISION_MODEL = "qwen-vl-max"
 MAX_IMAGES = 5
 
 def encode_image(path):
-    path = Path(path).expanduser().resolve()
-    data = path.read_bytes()
+    p = str(path)
+    if p.startswith("http://") or p.startswith("https://"):
+        req = Request(p, headers={"User-Agent": "Mozilla/5.0"})
+        data = urlopen(req, timeout=30).read()
+        mime = "image/" + (p.rsplit(".", 1)[-1] if "." in p else "png")
+    else:
+        fp = Path(p).expanduser().resolve()
+        data = fp.read_bytes()
+        mime = mimetypes.guess_type(str(fp))[0] or "image/png"
     b64 = base64.b64encode(data).decode()
-    mime = mimetypes.guess_type(str(path))[0] or "image/png"
     return b64, mime
 
 def call_vision(images, prompt):

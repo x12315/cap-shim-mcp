@@ -44,7 +44,7 @@ def do_search(query, max_results=5):
 def rpc(id=None, result=None, error=None):
     resp = {"jsonrpc": "2.0", "id": id}
     if error:
-        resp["error"] = error
+        resp["error"] = {"code": -1, "message": str(error)}
     else:
         resp["result"] = result
     sys.stdout.write(json.dumps(resp, ensure_ascii=False) + "\n")
