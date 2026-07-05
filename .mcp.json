@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "qwen-vision": {
+      "command": "python3",
+      "args": ["CHANGE_ME/vision-server.py"],
+      "startup_timeout_sec": 30
+    },
+    "tavily-search": {
+      "command": "python3",
+      "args": ["CHANGE_ME/search-server.py"],
+      "startup_timeout_sec": 30
+    }
+  }
+}

@@ -1,9 +1,9 @@
 [mcp_servers.vision-mcp]
 command = "python3"
-args = ["/Users/montana/codex-mcp/vision/server.py"]
+args = ["/Users/montana/.mcp-servers/vision/server.py"]
 startup_timeout_sec = 30
 
 [mcp_servers.search-mcp]
 command = "python3"
-args = ["/Users/montana/codex-mcp/search/server.py"]
+args = ["/Users/montana/.mcp-servers/search/server.py"]
 startup_timeout_sec = 30

@@ -1,10 +1,35 @@
 #!/usr/bin/env python3
-"""MCP server: vision via Qwen-VL. Zero deps (stdlib only)."""
+"""MCP server: vision via Qwen-VL. Zero deps (stdlib only).
+
+Reads DASHSCOPE_API_KEY from ~/.mcp-servers/.env (fallback: env var).
+"""
 import json, sys, base64, mimetypes, os
 from pathlib import Path
 from urllib.request import Request, urlopen
 
-VISION_KEY = "YOUR_DASHSCOPE_KEY_HERE"
+# ---- load .env (stdlib only): check multiple locations ----
+def _load_env():
+    candidates = [
+        Path.home() / ".mcp-servers" / ".env",       # deployed
+        Path(__file__).resolve().parent / ".env",    # same dir
+        Path(__file__).resolve().parent.parent / ".env",  # parent dir
+    ]
+    for env_path in candidates:
+        if not env_path.is_file():
+            continue
+        for line in env_path.read_text().splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, _, v = line.partition("=")
+            k, v = k.strip(), v.strip().strip('"').strip("'")
+            if k and k not in os.environ:
+                os.environ[k] = v
+        break  # use first found
+
+_load_env()
+
+VISION_KEY = os.environ.get("DASHSCOPE_API_KEY", "")
 VISION_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
 VISION_MODEL = "qwen-vl-max"
 MAX_IMAGES = 5
@@ -34,16 +59,19 @@ def call_vision(images, prompt):
 
 def rpc(id=None, result=None, error=None):
     resp = {"jsonrpc": "2.0", "id": id}
-    if error: resp["error"] = {"code": -1, "message": str(error)}
-    else: resp["result"] = result
-    sys.stdout.write(json.dumps(resp) + "\n"); sys.stdout.flush()
+    if error:
+        resp["error"] = {"code": -1, "message": str(error)}
+    else:
+        resp["result"] = result
+    sys.stdout.write(json.dumps(resp) + "\n")
+    sys.stdout.flush()
 
 for line in sys.stdin:
     msg = json.loads(line)
     m, i = msg.get("method"), msg.get("id")
     p = msg.get("params", {})
     if m == "initialize":
-        rpc(i, {"protocolVersion": "2024-11-05", "capabilities": {"tools": {}}, "serverInfo": {"name": "qwen-vision", "version": "0.1"}})
+        rpc(i, {"protocolVersion": "2024-11-05", "capabilities": {"tools": {}}, "serverInfo": {"name": "qwen-vision", "version": "0.2"}})
     elif m == "notifications/initialized":
         pass
     elif m == "tools/list":

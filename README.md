@@ -1,92 +1,83 @@
-# Codex MCP 能力补全迁移包
+# MCP Servers — Agent 通用能力包
 
-> 在 DeepSeek 等第三方后端无法提供图片识别、联网搜索时自动回退至前端 MCP 工具。
+> 图片识别 (Qwen-VL) + 联网搜索 (Tavily)，所有 agent 共用。
+> 适配: **Claude Code / Codex / Reasonix** 及任何支持 MCP 的 agent。
 
-## 文件结构
-
-```
-codex-mcp-migration/
-├── README.md          ← 本文件
-├── setup.sh           ← 一键部署脚本
-├── mcp-servers/
-│   ├── vision-server.py   ← 视觉 MCP (Qwen-VL)
-│   └── search-server.py   ← 搜索 MCP (Tavily)
-└── config/
-    ├── mcp-config.toml    ← MCP 服务器注册 (追加到 config.toml)
-    └── AGENTS-rules.md    ← 后端能力回退规则 (追加到 AGENTS.md)
-```
-
-## 迁移步骤
-
-### 0. 前提
-
-- macOS，已安装 Codex
-- 目标机器可运行 `python3`（系统自带）
-- 准备两个 API Key：
-  - Qwen-VL (DashScope): 视觉识别 — https://dashscope.console.aliyun.com → 模型服务 → API-KEY 管理 → 创建
-  - Tavily: 联网搜索 — https://app.tavily.com → Sign Up → API Keys
-  - 两者均有免费额度：DashScope 新用户百万 token 免费、Tavily 每月 1000 次免费搜索
-
-### 1. 部署 MCP Server
+## 快速开始
 
 ```bash
-# 复制 MCP server 到统一目录
-mkdir -p ~/.codex/mcp-servers
-cp mcp-servers/vision-server.py ~/.codex/mcp-servers/
-cp mcp-servers/search-server.py ~/.codex/mcp-servers/
-
-# 填入 API Key → 替换占位符
-# vision-server.py: 搜索 YOUR_DASHSCOPE_KEY_HERE
-# search-server.py: 搜索 YOUR_TAVILY_KEY_HERE
+cd ~/.mcp-servers  # 或重新 clone 本项目后执行 deploy.sh
+./deploy.sh
 ```
 
-### 2. 注册到 Codex config.toml
+部署后文件结构:
 
-打开 `~/.codex/config.toml`，在文件末尾追加 `config/mcp-config.toml` 的内容：
+```
+~/.mcp-servers/
+├── .env              ← API Keys (chmod 600, git ignore)
+├── vision/
+│   └── server.py     ← 图片识别 (Qwen-VL-Max)
+├── search/
+│   └── server.py     ← 联网搜索 (Tavily)
+└── deploy.sh
+```
+
+## API Keys
+
+全部集中在 `~/.mcp-servers/.env`，一处管理:
+
+```bash
+DASHSCOPE_API_KEY=sk-xxx    # 阿里云 DashScope → https://dashscope.console.aliyun.com
+TAVILY_API_KEY=tvly-xxx     # Tavily Search → https://app.tavily.com
+```
+
+server.py 通过 stdlib `_load_env()` 读取，无需 pip 安装任何依赖。
+
+## 注册到 Agent
+
+### Reasonix / Codex
+
+使用 `install_source` 工具或手动在 config.toml 追加:
 
 ```toml
 [mcp_servers.vision-mcp]
 command = "python3"
-args = ["/Users/你的用户名/.codex/mcp-servers/vision-server.py"]
+args = ["/Users/montana/.mcp-servers/vision/server.py"]
 startup_timeout_sec = 30
 
 [mcp_servers.search-mcp]
 command = "python3"
-args = ["/Users/你的用户名/.codex/mcp-servers/search-server.py"]
+args = ["/Users/montana/.mcp-servers/search/server.py"]
 startup_timeout_sec = 30
 ```
 
-> **注意**：把 `/Users/你的用户名/` 替换为实际用户名或使用 `~` 这种 shell 扩展符号在 `config.toml` 里不可用，使用 `$HOME` 也不行，必须写绝对路径。
+### Claude Code
 
-### 3. 写入 AGENTS 回退规则
-
-将 `config/AGENTS-rules.md` 中的 "[后端能力回退]" 规则追加到 `~/.codex/AGENTS.md` 或 `~/AGENTS.md`。
-
-### 4. 验证
-
-重启 Codex，新开会话：
-
-1. **视觉测试**：发一张图片，agent 尝试后端 → 失败 → 调用 `analyze_image` MCP → 首次弹窗授权 → 返回图片描述。
-2. **搜索测试**：问一个实时问题，agent 调用 `web_search` MCP → 首次弹窗授权 → 返回搜索结果。
-
-### 5. 工作原理
-
+```json
+{
+  "mcpServers": {
+    "vision-mcp": {
+      "command": "python3",
+      "args": ["/Users/montana/.mcp-servers/vision/server.py"]
+    },
+    "search-mcp": {
+      "command": "python3",
+      "args": ["/Users/montana/.mcp-servers/search/server.py"]
+    }
+  }
+}
 ```
-用户发图片/提问
-  ↓
-Agent 尝试后端能力（可能失败 / 第三方 API 不支持）
-  ↓
-AGENTS.md 规则：后端失败 → MCP 工具
-  ↓
-analyze_image ⋮ web_search (MCP)
-  ↓
-Qwen-VL Vision API ⋮ Tavily Search API
-```
+
+## 设计原则
+
+- **Zero deps**: stdlib only，不依赖 pip/venv
+- **Agent 无关**: 不绑定特定 agent，路径用绝对路径
+- **API Keys 集中**: `.env` + `chmod 600` + `.gitignore`
 
 ## 故障排查
 
 | 现象 | 检查 |
 |:-----|:----|
-| MCP 工具未出现 | `grep "mcp_servers" ~/.codex/config.toml` 确认注册 |
-| 调用时报 Key 错误 | 检查 server.py 里的 API Key 是否已替换 |
-| Agent 不调用 MCP 工具 | AGENTS.md 规则是否写入正确位置 |
+| MCP 工具未出现 | 确认 agent config 中路径为绝对路径（不要用 `~`） |
+| 调用报 Key 错误 | 检查 `~/.mcp-servers/.env` 是否存在且 key 正确 |
+| 图片分析无响应 | `DASHSCOPE_API_KEY` 是否有效，额度是否用完 |
