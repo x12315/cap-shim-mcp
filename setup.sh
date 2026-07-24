@@ -20,8 +20,8 @@ fi
 echo "[2/3] 配置 API Keys..."
 mkdir -p "$MCP_HOME"
 if [ ! -f "$MCP_HOME/.env" ]; then
-    if [ -f "$SCRIPT_DIR/.env" ]; then
-        cp "$SCRIPT_DIR/.env" "$MCP_HOME/.env"
+    if [ -f "$SCRIPT_DIR/config/env.template" ]; then
+        cp "$SCRIPT_DIR/config/env.template" "$MCP_HOME/.env"
     fi
     chmod 600 "$MCP_HOME/.env" 2>/dev/null || true
     echo "⚠️  请编辑 $MCP_HOME/.env 填入真实 API Key"

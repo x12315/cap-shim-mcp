@@ -47,7 +47,7 @@ uv run cap-shim serve search --port 8081
 全部集中在 `~/.mcp-servers/.env` 或项目根 `.env`：
 
 ```bash
-DASHSCOPE_API_KEY=sk-xxx    # 阿里云 DashScope → https://dashscope.console.aliyun.com
+QWEN_API_KEY=sk-xxx         # 阿里云 DashScope Qwen-VL
 TAVILY_API_KEY=tvly-xxx     # Tavily Search → https://app.tavily.com
 ```
 
@@ -88,7 +88,7 @@ cap-shim-mcp/
 git clone https://github.com/x12315/cap-shim-mcp.git ~/cap-shim-mcp
 cd ~/cap-shim-mcp
 uv sync
-cp .env.example .env  # 编辑填入真实 key
+cp config/env.template .env  # 编辑填入真实 key
 
 # 安装 systemd user unit
 mkdir -p ~/.config/systemd/user

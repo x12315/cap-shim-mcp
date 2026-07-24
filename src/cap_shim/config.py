@@ -25,7 +25,7 @@ def _load_env() -> None:
 _load_env()
 
 # ---- API keys ----
-DASHSCOPE_API_KEY = os.environ.get("DASHSCOPE_API_KEY", "")
+QWEN_API_KEY = os.environ.get("QWEN_API_KEY", "")
 TAVILY_API_KEY = os.environ.get("TAVILY_API_KEY", "")
 
 # ---- Vision ----
