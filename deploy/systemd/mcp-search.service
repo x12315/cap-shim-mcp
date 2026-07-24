@@ -1,0 +1,14 @@
+[Unit]
+Description=MCP Search Server (Tavily)
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/codex-mcp-migration
+EnvironmentFile=%h/codex-mcp-migration/.env
+ExecStart=%h/codex-mcp-migration/.venv/bin/python -m mcp_hub.cli serve search --host 0.0.0.0 --port 8081
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target

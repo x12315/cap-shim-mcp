@@ -1,20 +1,54 @@
 #!/bin/bash
-# MCP Servers 一键部署 — agent 通用版
-# 使用: chmod +x setup.sh && ./setup.sh
 set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 MCP_HOME="$HOME/.mcp-servers"
-echo "=== MCP Servers 部署 ==="
-mkdir -p "$MCP_HOME/vision" "$MCP_HOME/search"
-cp "$(dirname "$0")/mcp-servers/vision-server.py" "$MCP_HOME/vision/server.py"
-cp "$(dirname "$0")/mcp-servers/search-server.py" "$MCP_HOME/search/server.py"
-chmod +x "$MCP_HOME/vision/server.py" "$MCP_HOME/search/server.py"
+
+echo "=== MCP Hub 部署 ==="
+
+# 1. 安装 Python 包
+echo "[1/3] 安装依赖..."
+if command -v uv &>/dev/null; then
+    cd "$SCRIPT_DIR"
+    uv sync
+else
+    echo "⚠️  uv 未安装，请先安装: brew install uv 或 curl -LsSf https://astral.sh/uv/install.sh | sh"
+    exit 1
+fi
+
+# 2. 部署 .env
+echo "[2/3] 配置 API Keys..."
+mkdir -p "$MCP_HOME"
 if [ ! -f "$MCP_HOME/.env" ]; then
-    cp "$(dirname "$0")/.env.example" "$MCP_HOME/.env"
-    chmod 600 "$MCP_HOME/.env"
+    if [ -f "$SCRIPT_DIR/.env" ]; then
+        cp "$SCRIPT_DIR/.env" "$MCP_HOME/.env"
+    fi
+    chmod 600 "$MCP_HOME/.env" 2>/dev/null || true
     echo "⚠️  请编辑 $MCP_HOME/.env 填入真实 API Key"
 else
     echo ".env 已存在，跳过"
 fi
-echo "✓ 部署完成。在各 agent 配置中注册路径:"
-echo "  python3 $MCP_HOME/vision/server.py"
-echo "  python3 $MCP_HOME/search/server.py"
+
+# 3. 验证
+echo "[3/3] 验证..."
+"$SCRIPT_DIR/.venv/bin/python" -c "from mcp_hub.vision import create_server; s=create_server(); print(f'vision: {s.name} v{s.version}')"
+"$SCRIPT_DIR/.venv/bin/python" -c "from mcp_hub.search import create_server; s=create_server(); print(f'search: {s.name} v{s.version}')"
+
+echo ""
+echo "✓ 部署完成。用法:"
+echo ""
+echo "  本地 stdio:"
+echo "    uv run mcp-hub stdio vision"
+echo "    uv run mcp-hub stdio search"
+echo ""
+echo "  服务器 HTTP/SSE:"
+echo "    uv run mcp-hub serve vision --port 8080"
+echo "    uv run mcp-hub serve search --port 8081"
+echo ""
+echo "  注册到 Agent (stdio):"
+echo "    {"
+echo "      \"mcpServers\": {"
+echo "        \"qwen-vision\": { \"command\": \"uv\", \"args\": [\"run\", \"mcp-hub\", \"stdio\", \"vision\"] },"
+echo "        \"tavily-search\": { \"command\": \"uv\", \"args\": [\"run\", \"mcp-hub\", \"stdio\", \"search\"] }"
+echo "      }"
+echo "    }"

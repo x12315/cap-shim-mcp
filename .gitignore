@@ -1,7 +1,11 @@
 # 密钥文件（本地用，决不上传）
 *.env
+!.env.example
 *secret*
 *key*
+
+# Python
+.venv/
 
 # macOS
 .DS_Store

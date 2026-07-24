@@ -1,14 +1,12 @@
 {
   "mcpServers": {
     "qwen-vision": {
-      "command": "python3",
-      "args": ["/Users/montana/.mcp-servers/vision/server.py"],
-      "startup_timeout_sec": 30
+      "command": "uv",
+      "args": ["run", "mcp-hub", "stdio", "vision"]
     },
     "tavily-search": {
-      "command": "python3",
-      "args": ["/Users/montana/.mcp-servers/search/server.py"],
-      "startup_timeout_sec": 30
+      "command": "uv",
+      "args": ["run", "mcp-hub", "stdio", "search"]
     }
   }
 }
