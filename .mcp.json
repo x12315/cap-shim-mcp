@@ -2,11 +2,11 @@
   "mcpServers": {
     "qwen-vision": {
       "command": "uv",
-      "args": ["run", "mcp-hub", "stdio", "vision"]
+      "args": ["run", "cap-shim", "stdio", "vision"]
     },
     "tavily-search": {
       "command": "uv",
-      "args": ["run", "mcp-hub", "stdio", "search"]
+      "args": ["run", "cap-shim", "stdio", "search"]
     }
   }
 }

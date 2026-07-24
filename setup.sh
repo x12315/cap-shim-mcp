@@ -4,7 +4,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 MCP_HOME="$HOME/.mcp-servers"
 
-echo "=== MCP Hub 部署 ==="
+echo "=== cap-shim 部署 ==="
 
 # 1. 安装 Python 包
 echo "[1/3] 安装依赖..."
@@ -12,7 +12,7 @@ if command -v uv &>/dev/null; then
     cd "$SCRIPT_DIR"
     uv sync
 else
-    echo "⚠️  uv 未安装，请先安装: brew install uv 或 curl -LsSf https://astral.sh/uv/install.sh | sh"
+    echo "⚠️  uv 未安装，请先安装: brew install uv"
     exit 1
 fi
 
@@ -31,24 +31,24 @@ fi
 
 # 3. 验证
 echo "[3/3] 验证..."
-"$SCRIPT_DIR/.venv/bin/python" -c "from mcp_hub.vision import create_server; s=create_server(); print(f'vision: {s.name} v{s.version}')"
-"$SCRIPT_DIR/.venv/bin/python" -c "from mcp_hub.search import create_server; s=create_server(); print(f'search: {s.name} v{s.version}')"
+"$SCRIPT_DIR/.venv/bin/cap-shim" --help > /dev/null 2>&1
+echo "  cap-shim ✓"
 
 echo ""
 echo "✓ 部署完成。用法:"
 echo ""
 echo "  本地 stdio:"
-echo "    uv run mcp-hub stdio vision"
-echo "    uv run mcp-hub stdio search"
+echo "    uv run cap-shim stdio vision"
+echo "    uv run cap-shim stdio search"
 echo ""
 echo "  服务器 HTTP/SSE:"
-echo "    uv run mcp-hub serve vision --port 8080"
-echo "    uv run mcp-hub serve search --port 8081"
+echo "    uv run cap-shim serve vision --port 8080"
+echo "    uv run cap-shim serve search --port 8081"
 echo ""
 echo "  注册到 Agent (stdio):"
 echo "    {"
 echo "      \"mcpServers\": {"
-echo "        \"qwen-vision\": { \"command\": \"uv\", \"args\": [\"run\", \"mcp-hub\", \"stdio\", \"vision\"] },"
-echo "        \"tavily-search\": { \"command\": \"uv\", \"args\": [\"run\", \"mcp-hub\", \"stdio\", \"search\"] }"
+echo "        \"qwen-vision\": { \"command\": \"uv\", \"args\": [\"run\", \"cap-shim\", \"stdio\", \"vision\"] },"
+echo "        \"tavily-search\": { \"command\": \"uv\", \"args\": [\"run\", \"cap-shim\", \"stdio\", \"search\"] }"
 echo "      }"
 echo "    }"

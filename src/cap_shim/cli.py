@@ -1,4 +1,4 @@
-"""CLI 入口：mcp-hub serve|stdio vision|search [--port PORT]"""
+"""CLI 入口：cap-shim serve|stdio vision|search [--port PORT]"""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ DEFAULT_PORTS = {
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(prog="mcp-hub", description="MCP Hub — 通用 MCP 工具集")
+    parser = argparse.ArgumentParser(prog="cap-shim", description="cap-shim — capability shim for AI models")
     sub = parser.add_subparsers(dest="command", required=True)
 
     # serve

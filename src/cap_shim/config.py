@@ -6,7 +6,7 @@ from pathlib import Path
 
 def _load_env() -> None:
     candidates = [
-        Path(os.environ.get("MCP_HUB_ENV_FILE", "")),
+        Path(os.environ.get("CAP_SHIM_ENV_FILE", "")),
         Path.home() / ".mcp-servers" / ".env",
         Path.cwd() / ".env",
     ]

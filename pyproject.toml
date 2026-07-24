@@ -1,7 +1,7 @@
 [project]
-name = "mcp-hub"
+name = "cap-shim"
 version = "0.5.0"
-description = "MCP 工具集：图片识别 (Qwen-VL) + 联网搜索 (Tavily)，支持 stdio / HTTP-SSE 双传输层"
+description = "Capability shim for AI models — fill the gap with vision & search. 双传输层 (stdio + HTTP/SSE)."
 requires-python = ">=3.12"
 license = { text = "MIT" }
 dependencies = [
@@ -11,11 +11,11 @@ dependencies = [
 ]
 
 [project.scripts]
-mcp-hub = "mcp_hub.cli:main"
+cap-shim = "cap_shim.cli:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/mcp_hub"]
+packages = ["src/cap_shim"]

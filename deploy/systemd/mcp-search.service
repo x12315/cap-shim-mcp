@@ -4,9 +4,9 @@ After=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=%h/codex-mcp-migration
-EnvironmentFile=%h/codex-mcp-migration/.env
-ExecStart=%h/codex-mcp-migration/.venv/bin/python -m mcp_hub.cli serve search --host 0.0.0.0 --port 8081
+WorkingDirectory=%h/cap-shim-mcp
+EnvironmentFile=%h/cap-shim-mcp/.env
+ExecStart=%h/cap-shim-mcp/.venv/bin/cap-shim serve search --host 0.0.0.0 --port 8081
 Restart=always
 RestartSec=10
 
