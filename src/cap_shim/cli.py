@@ -7,6 +7,7 @@ import atexit
 import os
 import signal
 import sys
+import threading
 import time
 import traceback
 
@@ -29,6 +30,7 @@ PROXY_PID_FILE = os.environ.get("CAP_SHIM_PROXY_PID", "/tmp/cap-shim-proxy.pid")
 
 
 def _kill_old_proxy() -> None:
+    """非阻塞杀旧 proxy 进程。"""
     try:
         with open(PROXY_PID_FILE) as f:
             old_pid = int(f.read().strip())
@@ -36,18 +38,21 @@ def _kill_old_proxy() -> None:
         return
     if old_pid == os.getpid():
         return
-    try:
-        os.kill(old_pid, signal.SIGTERM)
-        for _ in range(20):
-            try:
-                os.kill(old_pid, 0)
-                time.sleep(0.1)
-            except ProcessLookupError:
-                break
-        else:
+
+    def _do_kill():
+        try:
+            os.kill(old_pid, signal.SIGTERM)
+            for _ in range(10):
+                try:
+                    os.kill(old_pid, 0)
+                    time.sleep(0.05)
+                except ProcessLookupError:
+                    return
             os.kill(old_pid, signal.SIGKILL)
-    except ProcessLookupError:
-        pass
+        except ProcessLookupError:
+            pass
+
+    threading.Thread(target=_do_kill, daemon=True).start()
 
 
 def _write_pid() -> None:
@@ -60,8 +65,11 @@ def _write_pid() -> None:
 
 
 def _cleanup_pid() -> None:
+    """仅当 PID 文件属于当前进程时才删除。"""
     try:
-        os.remove(PROXY_PID_FILE)
+        with open(PROXY_PID_FILE) as f:
+            if f.read().strip() == str(os.getpid()):
+                os.remove(PROXY_PID_FILE)
     except FileNotFoundError:
         pass
 
