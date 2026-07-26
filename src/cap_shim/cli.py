@@ -98,6 +98,8 @@ def main() -> None:
             atexit.register(_cleanup_pid)
             server = create_proxy()
             transports.run_stdio(server, idle_timeout=args.idle_timeout)
+        except FileExistsError:
+            sys.exit(0)
         except Exception:
             traceback.print_exc()
             import datetime as _dt
