@@ -43,15 +43,20 @@ def _kill_old_proxy() -> None:
                 os.kill(old_pid, 0)
                 time.sleep(0.1)
             except ProcessLookupError:
-                return
-        os.kill(old_pid, signal.SIGKILL)
+                break
+        else:
+            os.kill(old_pid, signal.SIGKILL)
     except ProcessLookupError:
         pass
 
 
 def _write_pid() -> None:
-    with open(PROXY_PID_FILE, "w") as f:
-        f.write(str(os.getpid()))
+    # 原子创建 PID 文件，防止竞态
+    fd = os.open(PROXY_PID_FILE, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+    try:
+        os.write(fd, str(os.getpid()).encode())
+    finally:
+        os.close(fd)
 
 
 def _cleanup_pid() -> None:
@@ -85,6 +90,10 @@ def main() -> None:
     if args.command == "proxy":
         try:
             _kill_old_proxy()
+            try:
+                os.remove(PROXY_PID_FILE)
+            except FileNotFoundError:
+                pass
             _write_pid()
             atexit.register(_cleanup_pid)
             server = create_proxy()
