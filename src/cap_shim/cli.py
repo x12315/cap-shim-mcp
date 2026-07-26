@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import atexit
+import os
+import signal
 
 from . import config, transports
 from .vision import create_server as create_vision
@@ -18,6 +21,44 @@ DEFAULT_PORTS = {
     "vision": config.VISION_PORT,
     "search": config.SEARCH_PORT,
 }
+
+PROXY_PID_FILE = os.environ.get("CAP_SHIM_PROXY_PID", "/tmp/cap-shim-proxy.pid")
+
+
+import time
+
+
+def _kill_old_proxy() -> None:
+    try:
+        with open(PROXY_PID_FILE) as f:
+            old_pid = int(f.read().strip())
+    except (FileNotFoundError, ValueError):
+        return
+    if old_pid == os.getpid():
+        return
+    try:
+        os.kill(old_pid, signal.SIGTERM)
+        for _ in range(50):
+            try:
+                os.kill(old_pid, 0)
+                time.sleep(0.1)
+            except ProcessLookupError:
+                return
+        os.kill(old_pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
+
+
+def _write_pid() -> None:
+    with open(PROXY_PID_FILE, "w") as f:
+        f.write(str(os.getpid()))
+
+
+def _cleanup_pid() -> None:
+    try:
+        os.remove(PROXY_PID_FILE)
+    except FileNotFoundError:
+        pass
 
 
 def main() -> None:
@@ -42,6 +83,9 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.command == "proxy":
+        _kill_old_proxy()
+        _write_pid()
+        atexit.register(_cleanup_pid)
         server = create_proxy()
         transports.run_stdio(server, idle_timeout=args.idle_timeout)
     elif args.command == "stdio":
