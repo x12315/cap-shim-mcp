@@ -25,7 +25,7 @@ def _load_env() -> None:
 _load_env()
 
 # ---- API keys ----
-DASHSCOPE_API_KEY = os.environ.get("DASHSCOPE_API_KEY", "")
+QWEN_API_KEY = os.environ.get("QWEN_API_KEY", "")
 TAVILY_API_KEY = os.environ.get("TAVILY_API_KEY", "")
 
 # ---- Vision ----
@@ -43,3 +43,6 @@ TAVILY_URL = "https://api.tavily.com/search"
 # ---- Ports ----
 VISION_PORT = int(os.environ.get("VISION_PORT", "8080"))
 SEARCH_PORT = int(os.environ.get("SEARCH_PORT", "8081"))
+
+# ---- Proxy ----
+PROXY_REMOTE_HOST = os.environ.get("PROXY_REMOTE_HOST", "")  # e.g. 100.115.123.9

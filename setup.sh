@@ -7,7 +7,7 @@ MCP_HOME="$HOME/.mcp-servers"
 echo "=== cap-shim 部署 ==="
 
 # 1. 安装 Python 包
-echo "[1/3] 安装依赖..."
+echo "[1/4] 安装依赖..."
 if command -v uv &>/dev/null; then
     cd "$SCRIPT_DIR"
     uv sync
@@ -17,11 +17,11 @@ else
 fi
 
 # 2. 部署 .env
-echo "[2/3] 配置 API Keys..."
+echo "[2/4] 配置 API Keys..."
 mkdir -p "$MCP_HOME"
 if [ ! -f "$MCP_HOME/.env" ]; then
-    if [ -f "$SCRIPT_DIR/.env" ]; then
-        cp "$SCRIPT_DIR/.env" "$MCP_HOME/.env"
+    if [ -f "$SCRIPT_DIR/config/env.template" ]; then
+        cp "$SCRIPT_DIR/config/env.template" "$MCP_HOME/.env"
     fi
     chmod 600 "$MCP_HOME/.env" 2>/dev/null || true
     echo "⚠️  请编辑 $MCP_HOME/.env 填入真实 API Key"
@@ -29,26 +29,33 @@ else
     echo ".env 已存在，跳过"
 fi
 
-# 3. 验证
-echo "[3/3] 验证..."
+# 3. 生成 Agent 配置
+echo "[3/4] 生成 OpenCode 配置..."
+if [ ! -f "$SCRIPT_DIR/opencode.jsonc" ]; then
+  if [ -f "$SCRIPT_DIR/config/opencode.jsonc.example" ]; then
+    sed "s|/path/to/cap-shim-mcp|$SCRIPT_DIR|g" \
+      "$SCRIPT_DIR/config/opencode.jsonc.example" > "$SCRIPT_DIR/opencode.jsonc"
+    echo "  opencode.jsonc 已生成 (proxy 模式)"
+  fi
+else
+  echo "  opencode.jsonc 已存在，跳过"
+fi
+
+# 4. 验证
+echo "[4/4] 验证..."
 "$SCRIPT_DIR/.venv/bin/cap-shim" --help > /dev/null 2>&1
 echo "  cap-shim ✓"
 
 echo ""
 echo "✓ 部署完成。用法:"
 echo ""
-echo "  本地 stdio:"
-echo "    uv run cap-shim stdio vision"
-echo "    uv run cap-shim stdio search"
+echo "  安装 macOS 开机自启 (launchd):"
+echo "    for f in deploy/launchd/*.plist; do"
+echo "      sed \"s|__PROJECT_ROOT__|$SCRIPT_DIR|g\" \"\$f\" > ~/Library/LaunchAgents/\$(basename \$f)"
+echo "    done"
+echo "    launchctl load ~/Library/LaunchAgents/cap-shim.*.plist"
 echo ""
-echo "  服务器 HTTP/SSE:"
-echo "    uv run cap-shim serve vision --port 8080"
-echo "    uv run cap-shim serve search --port 8081"
+echo "  远程服务器（可选）:"
+echo "    服务器上 systemd 部署，本地 .env 加 PROXY_REMOTE_HOST=IP"
 echo ""
-echo "  注册到 Agent (stdio):"
-echo "    {"
-echo "      \"mcpServers\": {"
-echo "        \"qwen-vision\": { \"command\": \"uv\", \"args\": [\"run\", \"cap-shim\", \"stdio\", \"vision\"] },"
-echo "        \"tavily-search\": { \"command\": \"uv\", \"args\": [\"run\", \"cap-shim\", \"stdio\", \"search\"] }"
-echo "      }"
-echo "    }"
+echo "  OpenCode 配置已写入 opencode.jsonc (proxy 模式)"

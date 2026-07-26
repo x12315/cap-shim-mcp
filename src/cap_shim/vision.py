@@ -94,7 +94,7 @@ def call_vision(images: list[tuple[str, str]], prompt: str) -> str:
     for attempt in range(1 + config.RETRIES):
         try:
             req = Request(config.VISION_URL, data=body, headers={
-                "Authorization": f"Bearer {config.DASHSCOPE_API_KEY}",
+                "Authorization": f"Bearer {config.QWEN_API_KEY}",
                 "Content-Type": "application/json",
             })
             resp = urlopen(req, timeout=90)

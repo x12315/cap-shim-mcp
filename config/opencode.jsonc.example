@@ -1,0 +1,8 @@
+{
+  "mcp": {
+    "cap-shim": {
+      "type": "local",
+      "command": ["uv", "run", "--directory", "/path/to/cap-shim-mcp", "cap-shim", "proxy"]
+    }
+  }
+}

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import time
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from . import config
@@ -20,16 +22,38 @@ def do_search(query: str, max_results: int = 5) -> str:
         "search_depth": "basic",
     }).encode()
 
-    req = Request(config.TAVILY_URL, data=body, headers={"Content-Type": "application/json"})
-    resp = urlopen(req, timeout=30)
-    data = json.loads(resp.read())
-    results = data.get("results", [])
+    last_err = ""
+    for attempt in range(1 + config.RETRIES):
+        try:
+            req = Request(config.TAVILY_URL, data=body, headers={"Content-Type": "application/json"})
+            resp = urlopen(req, timeout=30)
+            data = json.loads(resp.read())
+            results = data.get("results", [])
 
-    out = [
-        f"{r.get('title', '')}\n{r.get('url', '')}\n{r.get('content', '')}"
-        for r in results[:max_results]
-    ]
-    return "\n---\n".join(out) if out else "No results."
+            out = [
+                f"{r.get('title', '')}\n{r.get('url', '')}\n{r.get('content', '')}"
+                for r in results[:max_results]
+            ]
+            return "\n---\n".join(out) if out else "No results."
+
+        except HTTPError as e:
+            err_body = ""
+            try:
+                err_body = e.read().decode()[:300]
+                err_data = json.loads(err_body)
+                err_body = err_data.get("message", err_body)
+            except Exception:
+                pass
+            last_err = f"HTTP {e.code}: {err_body}"
+        except URLError as e:
+            last_err = str(e)
+        except Exception as e:
+            last_err = str(e)
+
+        if attempt < config.RETRIES:
+            time.sleep(config.RETRY_DELAY)
+
+    raise RuntimeError(f"搜索 API 调用失败（{config.RETRIES + 1} 次尝试）: {last_err}")
 
 
 def _handle_web_search(args: dict) -> str:
