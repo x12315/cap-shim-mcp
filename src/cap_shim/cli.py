@@ -7,6 +7,7 @@ import argparse
 from . import config, transports
 from .vision import create_server as create_vision
 from .search import create_server as create_search
+from .proxy import create_proxy
 
 SERVERS = {
     "vision": create_vision,
@@ -34,13 +35,20 @@ def main() -> None:
     p_stdio.add_argument("server", choices=list(SERVERS))
     p_stdio.add_argument("--idle-timeout", type=int, default=300)
 
+    # proxy
+    p_proxy = sub.add_parser("proxy", help="启动 proxy（自动探测并路由到可用后端）")
+    p_proxy.add_argument("--idle-timeout", type=int, default=300)
+
     args = parser.parse_args()
 
-    server = SERVERS[args.server]()
-
-    if args.command == "stdio":
+    if args.command == "proxy":
+        server = create_proxy()
+        transports.run_stdio(server, idle_timeout=args.idle_timeout)
+    elif args.command == "stdio":
+        server = SERVERS[args.server]()
         transports.run_stdio(server, idle_timeout=args.idle_timeout)
     elif args.command == "serve":
+        server = SERVERS[args.server]()
         port = args.port or DEFAULT_PORTS[args.server]
         transports.run_http(server, host=args.host, port=port)
 

@@ -43,3 +43,6 @@ TAVILY_URL = "https://api.tavily.com/search"
 # ---- Ports ----
 VISION_PORT = int(os.environ.get("VISION_PORT", "8080"))
 SEARCH_PORT = int(os.environ.get("SEARCH_PORT", "8081"))
+
+# ---- Proxy ----
+PROXY_REMOTE_HOST = os.environ.get("PROXY_REMOTE_HOST", "")  # e.g. 100.115.123.9

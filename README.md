@@ -31,7 +31,7 @@ uv run cap-shim serve search --port 8081
 
 部署到 systemd 参考 `deploy/systemd/`。
 
-远程客户端配置：
+远程客户端配置（Claude Code / VS Code 等标准 MCP 客户端）：
 
 ```json
 {
@@ -41,6 +41,8 @@ uv run cap-shim serve search --port 8081
   }
 }
 ```
+
+> **Open Code 不可用此配置**，请用上节 `local` + stdio 替代。详见下方「已知兼容性」。
 
 ## API Keys
 
@@ -96,6 +98,34 @@ cp deploy/systemd/*.service ~/.config/systemd/user/
 systemctl --user daemon-reload
 systemctl --user enable --now mcp-vision mcp-search
 ```
+
+## 已知兼容性
+
+### Open Code 的 `remote` + SSE 已知缺陷
+
+**症状**：Open Code 配置 `type: "remote"` + SSE URL 后，启动缓慢、历史对话空白、MCP 消息发送后立即终止。
+
+**根因**：Open Code 对 MCP SSE 传输的实现存在已知 bug（[#3157](https://github.com/anomalyco/opencode/issues/3157)、[#834](https://github.com/anomalyco/opencode/issues/834)、[#232](https://github.com/anomalyco/opencode/issues/232)），remote SSE 握手失败会导致 sidecar 进程 `Die`，整个会话崩溃。
+
+**解决方案**：使用 `local` + stdio，不走 SSE。
+
+```jsonc
+// opencode.jsonc — Open Code 全局配置
+{
+  "mcp": {
+    "qwen-vision": {
+      "type": "local",
+      "command": ["uv", "run", "--directory", "/path/to/cap-shim-mcp", "cap-shim", "stdio", "vision"]
+    },
+    "tavily-search": {
+      "type": "local",
+      "command": ["uv", "run", "--directory", "/path/to/cap-shim-mcp", "cap-shim", "stdio", "search"]
+    }
+  }
+}
+```
+
+> `remote` SSE 模式在其他客户端（Claude Code、VS Code MCP 扩展等）中工作正常。此问题仅影响 Open Code。
 
 ## 设计原则
 
