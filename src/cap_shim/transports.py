@@ -18,21 +18,54 @@ from .server import MCPServer
 
 # ---- stdio ----
 
-def run_stdio(server: MCPServer, idle_timeout: int = 300) -> None:
-    """stdio transport with idle timeout self-exit (0 = no timeout)."""
-    while True:
-        timeout = idle_timeout if idle_timeout > 0 else None
-        ready, _, _ = select.select([sys.stdin], [], [], timeout)
-        if not ready:
-            break
-        line = sys.stdin.readline()
-        if not line:
-            break
+import threading
+from concurrent.futures import ThreadPoolExecutor
 
-        response = server.handle_message(line)
-        if response is not None:
+_stdout_lock = threading.Lock()
+
+
+def run_stdio(server: MCPServer, idle_timeout: int = 300, max_workers: int = 4) -> None:
+    """stdio transport with idle timeout self-exit (0 = no timeout).
+
+    tools/call requests are dispatched to a thread pool so slow API
+    calls do not block reading of subsequent messages.
+    """
+    executor = ThreadPoolExecutor(max_workers=max_workers)
+    timeout = idle_timeout if idle_timeout > 0 else None
+
+    def _write(response: str) -> None:
+        with _stdout_lock:
             sys.stdout.write(response + "\n")
             sys.stdout.flush()
+
+    def _handle_async(line: str) -> None:
+        response = server.handle_message(line)
+        if response is not None:
+            _write(response)
+
+    try:
+        while True:
+            ready, _, _ = select.select([sys.stdin], [], [], timeout)
+            if not ready:
+                break
+            line = sys.stdin.readline()
+            if not line:
+                break
+
+            try:
+                msg = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+
+            method = msg.get("method")
+            if method == "tools/call":
+                executor.submit(_handle_async, line)
+            else:
+                response = server.handle_message(line)
+                if response is not None:
+                    _write(response)
+    finally:
+        executor.shutdown(wait=False)
 
 
 # ---- HTTP/SSE ----
