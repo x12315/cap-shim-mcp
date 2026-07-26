@@ -91,6 +91,10 @@ def main() -> None:
             transports.run_stdio(server, idle_timeout=args.idle_timeout)
         except Exception:
             traceback.print_exc()
+            import datetime as _dt
+            with open("/tmp/cap-shim-proxy-crash.log", "a") as _f:
+                _f.write(f"\n[{_dt.datetime.now()}]\n")
+                traceback.print_exc(file=_f)
             sys.exit(1)
     elif args.command == "stdio":
         server = SERVERS[args.server]()
