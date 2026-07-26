@@ -6,6 +6,9 @@ import argparse
 import atexit
 import os
 import signal
+import sys
+import time
+import traceback
 
 from . import config, transports
 from .vision import create_server as create_vision
@@ -25,9 +28,6 @@ DEFAULT_PORTS = {
 PROXY_PID_FILE = os.environ.get("CAP_SHIM_PROXY_PID", "/tmp/cap-shim-proxy.pid")
 
 
-import time
-
-
 def _kill_old_proxy() -> None:
     try:
         with open(PROXY_PID_FILE) as f:
@@ -38,7 +38,7 @@ def _kill_old_proxy() -> None:
         return
     try:
         os.kill(old_pid, signal.SIGTERM)
-        for _ in range(50):
+        for _ in range(20):
             try:
                 os.kill(old_pid, 0)
                 time.sleep(0.1)
@@ -83,11 +83,15 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.command == "proxy":
-        _kill_old_proxy()
-        _write_pid()
-        atexit.register(_cleanup_pid)
-        server = create_proxy()
-        transports.run_stdio(server, idle_timeout=args.idle_timeout)
+        try:
+            _kill_old_proxy()
+            _write_pid()
+            atexit.register(_cleanup_pid)
+            server = create_proxy()
+            transports.run_stdio(server, idle_timeout=args.idle_timeout)
+        except Exception:
+            traceback.print_exc()
+            sys.exit(1)
     elif args.command == "stdio":
         server = SERVERS[args.server]()
         transports.run_stdio(server, idle_timeout=args.idle_timeout)
