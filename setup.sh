@@ -33,8 +33,9 @@ fi
 echo "[3/4] 生成 OpenCode 配置..."
 if [ ! -f "$SCRIPT_DIR/opencode.jsonc" ]; then
   if [ -f "$SCRIPT_DIR/config/opencode.jsonc.example" ]; then
-    cp "$SCRIPT_DIR/config/opencode.jsonc.example" "$SCRIPT_DIR/opencode.jsonc"
-    echo "  opencode.jsonc 已生成 (remote SSE 模式)"
+    sed "s|/path/to/cap-shim-mcp|$SCRIPT_DIR|g" \
+      "$SCRIPT_DIR/config/opencode.jsonc.example" > "$SCRIPT_DIR/opencode.jsonc"
+    echo "  opencode.jsonc 已生成 (proxy 模式)"
   fi
 else
   echo "  opencode.jsonc 已存在，跳过"

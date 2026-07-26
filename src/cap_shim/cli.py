@@ -37,7 +37,7 @@ def main() -> None:
 
     # proxy
     p_proxy = sub.add_parser("proxy", help="启动 proxy（自动探测并路由到可用后端）")
-    p_proxy.add_argument("--idle-timeout", type=int, default=300)
+    p_proxy.add_argument("--idle-timeout", type=int, default=0)
 
     args = parser.parse_args()
 

@@ -19,9 +19,10 @@ from .server import MCPServer
 # ---- stdio ----
 
 def run_stdio(server: MCPServer, idle_timeout: int = 300) -> None:
-    """stdio transport with idle timeout self-exit."""
+    """stdio transport with idle timeout self-exit (0 = no timeout)."""
     while True:
-        ready, _, _ = select.select([sys.stdin], [], [], idle_timeout)
+        timeout = idle_timeout if idle_timeout > 0 else None
+        ready, _, _ = select.select([sys.stdin], [], [], timeout)
         if not ready:
             break
         line = sys.stdin.readline()
